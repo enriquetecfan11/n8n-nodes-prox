@@ -479,81 +479,69 @@ export class Proxmox implements INodeType {
 		const items = this.getInputData();
 		const returnData: any[] = [];
 
-			const credentials = await this.getCredentials("proxmoxApi");
-	const serverIp = (credentials as any).serverIp;
-	const authMethod = (credentials as any).authMethod;
-	const ignoreSsl = (credentials as any).ignoreSsl !== false; // Por defecto ignorar SSL
+		const credentials = await this.getCredentials("proxmoxApi");
+		const serverIp = (credentials as any).serverIp;
+		const authMethod = (credentials as any).authMethod;
+		const ignoreSsl = (credentials as any).ignoreSsl !== false;
 
-	let authHeaders: any = {};
-	let ticket: string = '';
-	let csrfToken: string = '';
+		let authHeaders: any = {};
 
-	// Función auxiliar para obtener ticket de autenticación
-	const getAuthTicket = async () => {
-		if (authMethod === 'userPass') {
-			const username = (credentials as any).username;
-			const password = (credentials as any).password;
-			
-			const ticketOptions = {
-				method: 'POST' as IHttpRequestMethods,
-				uri: `${serverIp}/api2/json/access/ticket`,
-				form: {
-					username: username,
-					password: password,
-				},
-				json: true,
-				rejectUnauthorized: !ignoreSsl,
-			};
+		const getAuthTicket = async () => {
+			if (authMethod === 'userPass') {
+				const username = (credentials as any).username;
+				const password = (credentials as any).password;
+				const ticketOptions = {
+					method: 'POST' as IHttpRequestMethods,
+					uri: `${serverIp}/api2/json/access/ticket`,
+					form: { username, password },
+					json: true,
+					rejectUnauthorized: !ignoreSsl,
+				};
+				const ticketResponse = await this.helpers.request(ticketOptions);
+				const ticket = ticketResponse.data.ticket;
+				const csrfToken = ticketResponse.data.CSRFPreventionToken;
+				authHeaders = {
+					Cookie: `PVEAuthCookie=${ticket}`,
+					CSRFPreventionToken: csrfToken,
+				};
+			} else {
+				const apiToken = (credentials as any).apiToken;
+				authHeaders = {
+					Authorization: `PVEAPIToken=${apiToken}`,
+				};
+			}
+		};
 
-			const ticketResponse = await this.helpers.request(ticketOptions);
-			ticket = ticketResponse.data.ticket;
-			csrfToken = ticketResponse.data.CSRFPreventionToken;
-			
-			authHeaders = {
-				Cookie: `PVEAuthCookie=${ticket}`,
-				CSRFPreventionToken: csrfToken,
-			};
-		} else {
-			// Usar API Token
-			const apiToken = (credentials as any).apiToken;
-			authHeaders = {
-				Authorization: `PVEAPIToken=${apiToken}`,
-			};
-		}
-	};
-
-		// Obtener autenticación
 		await getAuthTicket();
 
-		const resource = this.getNodeParameter('resource', 0) as string;
-		const operation = this.getNodeParameter('operation', 0) as string;
-		const node = this.getNodeParameter('node', 0) as string;
-		const vmid = this.getNodeParameter('vmid', 0) as number;
-
-		let options: any;
-		let responseData: any;
-
-			// Función auxiliar para hacer peticiones a la API
-	const proxmoxRequest = async (method: IHttpRequestMethods, path: string, body?: object) => {
-		options = {
-			method,
-			uri: `${serverIp}/api2/json${path}`,
-			headers: authHeaders,
-			json: true,
-			body: body || undefined,
-			rejectUnauthorized: !ignoreSsl,
+		const proxmoxRequest = async (method: IHttpRequestMethods, path: string, body?: object) => {
+			const options = {
+				method,
+				uri: `${serverIp}/api2/json${path}`,
+				headers: authHeaders,
+				json: true,
+				body: body || undefined,
+				rejectUnauthorized: !ignoreSsl,
+			};
+			return this.helpers.request(options);
 		};
-		return this.helpers.request(options);
-	};
 
 		for (let i = 0; i < items.length; i++) {
+			const resource = this.getNodeParameter('resource', i) as string;
+			const operation = this.getNodeParameter('operation', i) as string;
+			let responseData: any;
+
 			try {
 				if (resource === 'vm') {
+					const node = this.getNodeParameter('node', i) as string;
+					let vmid: number;
+
 					switch (operation) {
 						case 'listVms':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu`);
 							break;
 						case 'getVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmid}/config`);
 							break;
 						case 'createVm':
@@ -562,47 +550,54 @@ export class Proxmox implements INodeType {
 							const vmMemory = this.getNodeParameter('vmMemory', i) as number;
 							const vmDiskSize = this.getNodeParameter('vmDiskSize', i) as number;
 							const vmStorage = this.getNodeParameter('vmStorage', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu`, {
-								name: vmName,
-								cores: vmCores,
-								memory: vmMemory,
-								sata0: `${vmStorage}:${vmDiskSize}`,
-							});
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu`, { name: vmName, cores: vmCores, memory: vmMemory, sata0: `${vmStorage}:${vmDiskSize}` });
 							break;
 						case 'startVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/start`);
 							break;
 						case 'stopVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/stop`);
 							break;
 						case 'restartVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/reboot`);
 							break;
 						case 'deleteVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/qemu/${vmid}`);
 							break;
 						case 'cloneVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							const targetNodeClone = this.getNodeParameter('targetNode', i) as string;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/clone`, { target: targetNodeClone });
 							break;
 						case 'migrateVm':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							const targetNodeMigrate = this.getNodeParameter('targetNode', i) as string;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/migrate`, { target: targetNodeMigrate });
 							break;
 						case 'configureVm':
-							const vmConfig = this.getNodeParameter('vmConfig', i) as object; // Needs to be defined in properties
+							vmid = this.getNodeParameter('vmid', i) as number;
+							const vmConfig = this.getNodeParameter('vmConfig', i) as object;
 							responseData = await proxmoxRequest('PUT', `/nodes/${node}/qemu/${vmid}/config`, vmConfig);
 							break;
 						case 'getVmStatus':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmid}/status/current`);
 							break;
 					}
 				} else if (resource === 'lxc') {
+					const node = this.getNodeParameter('node', i) as string;
+					let vmid: number;
+
 					switch (operation) {
 						case 'listContainers':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc`);
 							break;
 						case 'getContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc/${vmid}/config`);
 							break;
 						case 'createContainer':
@@ -612,76 +607,76 @@ export class Proxmox implements INodeType {
 							const containerDiskSize = this.getNodeParameter('containerDiskSize', i) as number;
 							const containerStorage = this.getNodeParameter('containerStorage', i) as string;
 							const containerTemplate = this.getNodeParameter('containerTemplate', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc`, {
-								name: containerName,
-								cores: containerCores,
-								memory: containerMemory,
-								rootfs: `${containerStorage}:${containerDiskSize}`,
-								template: containerTemplate,
-							});
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc`, { name: containerName, cores: containerCores, memory: containerMemory, rootfs: `${containerStorage}:${containerDiskSize}`, template: containerTemplate });
 							break;
 						case 'startContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/status/start`);
 							break;
 						case 'stopContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/status/stop`);
 							break;
 						case 'restartContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/status/reboot`);
 							break;
 						case 'deleteContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/lxc/${vmid}`);
 							break;
 						case 'cloneContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							const targetNodeClone = this.getNodeParameter('targetNode', i) as string;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/clone`, { target: targetNodeClone });
 							break;
 						case 'migrateContainer':
+							vmid = this.getNodeParameter('vmid', i) as number;
 							const targetNodeMigrate = this.getNodeParameter('targetNode', i) as string;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/migrate`, { target: targetNodeMigrate });
 							break;
 						case 'configureContainer':
-							const containerConfig = this.getNodeParameter('containerConfig', i) as object; // Needs to be defined in properties
+							vmid = this.getNodeParameter('vmid', i) as number;
+							const containerConfig = this.getNodeParameter('containerConfig', i) as object;
 							responseData = await proxmoxRequest('PUT', `/nodes/${node}/lxc/${vmid}/config`, containerConfig);
 							break;
 					}
 				} else if (resource === 'storage') {
-					const storageId = this.getNodeParameter('storageId', i) as string;
-					const volumeId = this.getNodeParameter('volumeId', i) as string;
-					const contentType = this.getNodeParameter('contentType', i) as string;
-					const fileName = this.getNodeParameter('fileName', i) as string;
-					const url = this.getNodeParameter('url', i) as string;
+					const node = this.getNodeParameter('node', i) as string;
 
 					switch (operation) {
 						case 'listStorage':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage`);
 							break;
 						case 'getStorage':
+							const storageId = this.getNodeParameter('storageId', i) as string;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageId}`);
 							break;
 						case 'createVolume':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageId}/content`, {
-								filename: fileName,
-								content: contentType,
-							});
+							const storageIdCreate = this.getNodeParameter('storageId', i) as string;
+							const fileNameCreate = this.getNodeParameter('fileName', i) as string;
+							const contentTypeCreate = this.getNodeParameter('contentType', i) as string;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdCreate}/content`, { filename: fileNameCreate, content: contentTypeCreate });
 							break;
 						case 'deleteVolume':
-							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageId}/content/${volumeId}`);
+							const storageIdDelete = this.getNodeParameter('storageId', i) as string;
+							const volumeIdDelete = this.getNodeParameter('volumeId', i) as string;
+							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageIdDelete}/content/${volumeIdDelete}`);
 							break;
 						case 'uploadIso':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageId}/upload`, {
-								filename: fileName,
-								content: 'iso',
-							});
+							const storageIdUpload = this.getNodeParameter('storageId', i) as string;
+							const fileNameUpload = this.getNodeParameter('fileName', i) as string;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdUpload}/upload`, { filename: fileNameUpload, content: 'iso' });
 							break;
 						case 'downloadTemplate':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageId}/template`, {
-								url: url,
-								filename: fileName,
-							});
+							const storageIdDownload = this.getNodeParameter('storageId', i) as string;
+							const urlDownload = this.getNodeParameter('url', i) as string;
+							const fileNameDownload = this.getNodeParameter('fileName', i) as string;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdDownload}/template`, { url: urlDownload, filename: fileNameDownload });
 							break;
 						case 'backupStorage':
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageId}/content`);
+							const storageIdBackup = this.getNodeParameter('storageId', i) as string;
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageIdBackup}/content`);
 							break;
 					}
 				} else if (resource === 'cluster') {
@@ -693,10 +688,12 @@ export class Proxmox implements INodeType {
 							responseData = await proxmoxRequest('GET', `/nodes`);
 							break;
 						case 'getNode':
+							const node = this.getNodeParameter('node', i) as string;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/status`);
 							break;
 						case 'nodeStatistics':
-							responseData = await proxmoxRequest('GET', `/nodes/${node}`);
+							const nodeStats = this.getNodeParameter('node', i) as string;
+							responseData = await proxmoxRequest('GET', `/nodes/${nodeStats}`);
 							break;
 						case 'clusterResources':
 							responseData = await proxmoxRequest('GET', `/cluster/resources`);
@@ -709,60 +706,55 @@ export class Proxmox implements INodeType {
 							break;
 					}
 				} else if (resource === 'backup') {
-					const storageId = this.getNodeParameter('storageId', i) as string;
-					const backupType = this.getNodeParameter('backupType', i) as string;
-					const description = this.getNodeParameter('description', i) as string;
-					const backupId = this.getNodeParameter('backupId', i) as string;
-					const volumeId = this.getNodeParameter('volumeId', i) as string;
+					const node = this.getNodeParameter('node', i) as string;
 
 					switch (operation) {
 						case 'listBackups':
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageId}/content?content=backup`);
+							const storageIdList = this.getNodeParameter('storageId', i) as string;
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageIdList}/content?content=backup`);
 							break;
 						case 'createBackup':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/vzdump`, {
-								storage: storageId,
-								mode: 'snapshot',
-								description: description,
-								type: backupType,
-								vmid: vmid,
-							});
+							const vmid = this.getNodeParameter('vmid', i) as number;
+							const storageIdCreate = this.getNodeParameter('storageId', i) as string;
+							const backupTypeCreate = this.getNodeParameter('backupType', i) as string;
+							const descriptionCreate = this.getNodeParameter('description', i) as string;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/vzdump`, { storage: storageIdCreate, mode: 'snapshot', description: descriptionCreate, type: backupTypeCreate, vmid: vmid });
 							break;
 						case 'restoreBackup':
-							// Restore backup requires more specific parameters depending on VM/LXC and backup type
-							// For simplicity, assuming a generic restore to a new VMID/Container ID
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc`, { // This path is for LXC restore, needs to be dynamic for VM
-								// Add parameters for restore
-							});
+							// This is a complex operation, needs more specific implementation
+							responseData = { "error": "Restore operation not fully implemented yet." };
 							break;
 						case 'deleteBackup':
-							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageId}/content/${volumeId}`);
+							const storageIdDelete = this.getNodeParameter('storageId', i) as string;
+							const volumeIdDelete = this.getNodeParameter('volumeId', i) as string;
+							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageIdDelete}/content/${volumeIdDelete}`);
 							break;
 						case 'backupJobs':
 							responseData = await proxmoxRequest('GET', `/cluster/backup`);
 							break;
 						case 'backupConfiguration':
-							// This operation would require more dynamic parameters based on what the user wants to configure.
-							const backupConfig = this.getNodeParameter('backupConfig', i) as object; // Needs to be defined in properties
-							responseData = await proxmoxRequest('PUT', `/cluster/backup/${backupId}`, backupConfig);
+							const backupIdConfig = this.getNodeParameter('backupId', i) as string;
+							const backupConfig = this.getNodeParameter('backupConfig', i) as object;
+							responseData = await proxmoxRequest('PUT', `/cluster/backup/${backupIdConfig}`, backupConfig);
 							break;
 					}
 				}
 
 				if (responseData) {
-					if (Array.isArray(responseData.data)) {
-						// If the response is a list, convert to an array of items for n8n
-						returnData.push(...responseData.data.map((data: any) => ({ json: data })));
-					} else {
-						returnData.push({ json: responseData.data });
-					}
-				} else {
-					returnData.push({ json: responseData });
+					const executionData = this.helpers.constructExecutionMetaData(
+						this.helpers.returnJsonArray(responseData.data || responseData),
+						{ itemData: { item: i } },
+					);
+					returnData.push(...executionData);
 				}
+
 			} catch (error) {
-				// Implement try/catch and error handling
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: error.message } });
+					const executionErrorData = this.helpers.constructExecutionMetaData(
+						this.helpers.returnJsonArray({ error: error.message }),
+						{ itemData: { item: i } },
+					);
+					returnData.push(...executionErrorData);
 					continue;
 				}
 				throw error;
