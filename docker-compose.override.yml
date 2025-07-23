@@ -1,0 +1,4 @@
+services:
+  n8n:
+    volumes:
+      - .:/home/node/.n8n/custom-nodes/n8n-nodes-prox

@@ -1,0 +1,23 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n-proxmox-dev
+    ports:
+      - 5678:5678
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom-nodes
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_NODE_ENV=development
+      - N8N_LOG_LEVEL=debug
+      - N8N_ENABLE_TELEMETRY=false
+      - N8N_RUNNERS_ENABLED=true
+      - TZ=Europe/Madrid
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+volumes:
+  n8n_data:
