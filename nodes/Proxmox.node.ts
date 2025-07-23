@@ -527,8 +527,6 @@ export class Proxmox implements INodeType {
 
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
-		const node = this.getNodeParameter('node', 0) as string;
-		const vmid = this.getNodeParameter('vmid', 0) as number;
 
 		let options: any;
 		let responseData: any;
@@ -549,11 +547,14 @@ export class Proxmox implements INodeType {
 		for (let i = 0; i < items.length; i++) {
 			try {
 				if (resource === 'vm') {
+					const node = this.getNodeParameter('node', i) as string;
+					
 					switch (operation) {
 						case 'listVms':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu`);
 							break;
 						case 'getVm':
+							const vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmid}/config`);
 							break;
 						case 'createVm':
@@ -570,34 +571,44 @@ export class Proxmox implements INodeType {
 							});
 							break;
 						case 'startVm':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/start`);
+							const vmidStart = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmidStart}/status/start`);
 							break;
 						case 'stopVm':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/stop`);
+							const vmidStop = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmidStop}/status/stop`);
 							break;
 						case 'restartVm':
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/status/reboot`);
+							const vmidRestart = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmidRestart}/status/reboot`);
 							break;
 						case 'deleteVm':
-							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/qemu/${vmid}`);
+							const vmidDelete = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/qemu/${vmidDelete}`);
 							break;
 						case 'cloneVm':
+							const vmidClone = this.getNodeParameter('vmid', i) as number;
 							const targetNodeClone = this.getNodeParameter('targetNode', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/clone`, { target: targetNodeClone });
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmidClone}/clone`, { target: targetNodeClone });
 							break;
 						case 'migrateVm':
+							const vmidMigrate = this.getNodeParameter('vmid', i) as number;
 							const targetNodeMigrate = this.getNodeParameter('targetNode', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/migrate`, { target: targetNodeMigrate });
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmidMigrate}/migrate`, { target: targetNodeMigrate });
 							break;
 						case 'configureVm':
-							const vmConfig = this.getNodeParameter('vmConfig', i) as object; // Needs to be defined in properties
-							responseData = await proxmoxRequest('PUT', `/nodes/${node}/qemu/${vmid}/config`, vmConfig);
+							const vmidConfig = this.getNodeParameter('vmid', i) as number;
+							const vmConfig = this.getNodeParameter('vmConfig', i) as object;
+							responseData = await proxmoxRequest('PUT', `/nodes/${node}/qemu/${vmidConfig}/config`, vmConfig);
 							break;
 						case 'getVmStatus':
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmid}/status/current`);
+							const vmidStatus = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmidStatus}/status/current`);
 							break;
 					}
 				} else if (resource === 'lxc') {
+					const node = this.getNodeParameter('node', i) as string;
+					
 					switch (operation) {
 						case 'listContainers':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc`);
@@ -646,16 +657,18 @@ export class Proxmox implements INodeType {
 							break;
 					}
 				} else if (resource === 'storage') {
-					const storageId = this.getNodeParameter('storageId', i) as string;
-					const volumeId = this.getNodeParameter('volumeId', i) as string;
-					const contentType = this.getNodeParameter('contentType', i) as string;
-					const fileName = this.getNodeParameter('fileName', i) as string;
-					const url = this.getNodeParameter('url', i) as string;
-
+					const node = this.getNodeParameter('node', i) as string;
+					
 					switch (operation) {
 						case 'listStorage':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage`);
 							break;
+						default:
+							const storageId = this.getNodeParameter('storageId', i) as string;
+							const volumeId = this.getNodeParameter('volumeId', i) as string;
+							const contentType = this.getNodeParameter('contentType', i) as string;
+							const fileName = this.getNodeParameter('fileName', i) as string;
+							const url = this.getNodeParameter('url', i) as string;
 						case 'getStorage':
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageId}`);
 							break;
