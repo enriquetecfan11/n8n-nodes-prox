@@ -5,12 +5,32 @@ export class Proxmox implements ICredentialType {
 	displayName = 'Proxmox API';
 	properties: INodeProperties[] = [
 		{
-			displayName: 'Proxmox Server IP/Hostname',
+			displayName: 'Proxmox Server URL',
 			name: 'serverIp',
 			type: 'string',
 			default: '',
-			placeholder: 'https://192.168.1.100:8006',
-			description: 'The IP address or hostname of your Proxmox VE server, including port (e.g., https://192.168.1.100:8006)',
+			placeholder: 'http://192.168.1.100:8006 o https://192.168.1.100:8006',
+			description: 'La URL completa de tu servidor Proxmox VE (puede ser HTTP o HTTPS)',
+			required: true,
+		},
+		{
+			displayName: 'Método de Autenticación',
+			name: 'authMethod',
+			type: 'options',
+			options: [
+				{
+					name: 'Username/Password',
+					value: 'userPass',
+					description: 'Usar username y password para obtener ticket'
+				},
+				{
+					name: 'API Token',
+					value: 'apiToken',
+					description: 'Usar token de API de Proxmox'
+				},
+			],
+			default: 'userPass',
+			description: 'Método de autenticación a utilizar',
 			required: true,
 		},
 		{
@@ -19,8 +39,48 @@ export class Proxmox implements ICredentialType {
 			type: 'string',
 			default: '',
 			placeholder: 'user@pam!tokenid=apitokenvalue',
-			description: 'Your Proxmox API Token in the format user@pam!tokenid=apitokenvalue',
+			description: 'Tu token de API de Proxmox en formato user@pam!tokenid=apitokenvalue',
+			displayOptions: {
+				show: {
+					authMethod: ['apiToken'],
+				},
+			},
 			required: true,
+		},
+		{
+			displayName: 'Username',
+			name: 'username',
+			type: 'string',
+			default: '',
+			placeholder: 'root@pam',
+			description: 'Tu usuario de Proxmox (ej: root@pam)',
+			displayOptions: {
+				show: {
+					authMethod: ['userPass'],
+				},
+			},
+			required: true,
+		},
+		{
+			displayName: 'Password',
+			name: 'password',
+			type: 'string',
+			typeOptions: { password: true },
+			default: '',
+			description: 'Tu contraseña de Proxmox',
+			displayOptions: {
+				show: {
+					authMethod: ['userPass'],
+				},
+			},
+			required: true,
+		},
+		{
+			displayName: 'Ignorar errores SSL/TLS',
+			name: 'ignoreSsl',
+			type: 'boolean',
+			default: true,
+			description: 'Ignorar errores de certificados SSL/TLS (recomendado para certificados autofirmados)',
 		},
 	];
 

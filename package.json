@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-prox",
   "version": "0.1.0",
-  "description": "Proxmox Node for n8n workflow engine to manage virtual machines",
+  "description": "Nodos para n8n que permiten gestionar Proxmox VE con autenticación por username/password o API tokens. Soporta VMs, contenedores, almacenamiento, cluster y backups.",
   "keywords": [
     "n8n-community-node-package"
   ],

@@ -416,18 +416,52 @@ export class Proxmox implements INodeType {
 		loadOptions: {
 			// Method to dynamically load Proxmox nodes
 			getNodes: async function(this: ILoadOptionsFunctions) {
-				const credentials = await this.getCredentials('proxmoxApi');
-				const serverIp = (credentials as any).serverIp;
-				const apiToken = (credentials as any).apiToken;
+						const credentials = await this.getCredentials('proxmoxApi');
+		const serverIp = (credentials as any).serverIp;
+		const authMethod = (credentials as any).authMethod;
+		const ignoreSsl = (credentials as any).ignoreSsl !== false; // Por defecto ignorar SSL
 
-				const options = {
-					method: 'GET' as IHttpRequestMethods,
-					uri: `${serverIp}/api2/json/nodes`,
-					headers: {
-						Authorization: `PVEAPIToken=${apiToken}`,
-					},
-					json: true,
-				};
+		let authHeaders: any = {};
+
+		if (authMethod === 'userPass') {
+			// Obtener ticket de autenticación
+			const username = (credentials as any).username;
+			const password = (credentials as any).password;
+			
+			const ticketOptions = {
+				method: 'POST' as IHttpRequestMethods,
+				uri: `${serverIp}/api2/json/access/ticket`,
+				form: {
+					username: username,
+					password: password,
+				},
+				json: true,
+				rejectUnauthorized: !ignoreSsl,
+			};
+
+			const ticketResponse = await this.helpers.request(ticketOptions);
+			const ticket = ticketResponse.data.ticket;
+			const csrfToken = ticketResponse.data.CSRFPreventionToken;
+			
+			authHeaders = {
+				Cookie: `PVEAuthCookie=${ticket}`,
+				CSRFPreventionToken: csrfToken,
+			};
+		} else {
+			// Usar API Token
+			const apiToken = (credentials as any).apiToken;
+			authHeaders = {
+				Authorization: `PVEAPIToken=${apiToken}`,
+			};
+		}
+
+		const options = {
+			method: 'GET' as IHttpRequestMethods,
+			uri: `${serverIp}/api2/json/nodes`,
+			headers: authHeaders,
+			json: true,
+			rejectUnauthorized: !ignoreSsl,
+		};
 
 				const response = await this.helpers.request(options);
 
@@ -447,7 +481,49 @@ export class Proxmox implements INodeType {
 
 		const credentials = await this.getCredentials("proxmoxApi");
 		const serverIp = (credentials as any).serverIp;
-		const apiToken = (credentials as any).apiToken;
+		const authMethod = (credentials as any).authMethod;
+		const ignoreSsl = (credentials as any).ignoreSsl !== false; // Por defecto ignorar SSL
+
+		let authHeaders: any = {};
+		let ticket: string = '';
+		let csrfToken: string = '';
+
+		// Función auxiliar para obtener ticket de autenticación
+		const getAuthTicket = async () => {
+			if (authMethod === 'userPass') {
+				const username = (credentials as any).username;
+				const password = (credentials as any).password;
+				
+				const ticketOptions = {
+					method: 'POST' as IHttpRequestMethods,
+					uri: `${serverIp}/api2/json/access/ticket`,
+					form: {
+						username: username,
+						password: password,
+					},
+					json: true,
+					rejectUnauthorized: !ignoreSsl,
+				};
+
+				const ticketResponse = await this.helpers.request(ticketOptions);
+				ticket = ticketResponse.data.ticket;
+				csrfToken = ticketResponse.data.CSRFPreventionToken;
+				
+				authHeaders = {
+					Cookie: `PVEAuthCookie=${ticket}`,
+					CSRFPreventionToken: csrfToken,
+				};
+			} else {
+				// Usar API Token
+				const apiToken = (credentials as any).apiToken;
+				authHeaders = {
+					Authorization: `PVEAPIToken=${apiToken}`,
+				};
+			}
+		};
+
+		// Obtener autenticación
+		await getAuthTicket();
 
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
@@ -457,16 +533,15 @@ export class Proxmox implements INodeType {
 		let options: any;
 		let responseData: any;
 
-		// Helper function to make API requests
+		// Función auxiliar para hacer peticiones a la API
 		const proxmoxRequest = async (method: IHttpRequestMethods, path: string, body?: object) => {
 			options = {
 				method,
 				uri: `${serverIp}/api2/json${path}`,
-				headers: {
-					Authorization: `PVEAPIToken=${apiToken}`,
-				},
+				headers: authHeaders,
 				json: true,
 				body: body || undefined,
+				rejectUnauthorized: !ignoreSsl,
 			};
 			return this.helpers.request(options);
 		};
