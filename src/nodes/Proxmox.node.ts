@@ -27,10 +27,7 @@ export class Proxmox implements INodeType {
 				type: 'options',
 				options: [
 					{ name: 'Virtual Machine (VM)', value: 'vm', description: 'Manage virtual machines (QEMU/KVM).' },
-					{ name: 'Container (LXC)', value: 'lxc', description: 'Manage Linux containers.' },
-					{ name: 'Storage', value: 'storage', description: 'Manage storage resources and content.' },
-					{ name: 'Cluster', value: 'cluster', description: 'Monitor and manage Proxmox cluster resources.' },
-					{ name: 'Backup', value: 'backup', description: 'Perform backup and restore operations.' },
+					{ name: 'Container (LXC)', value: 'lxc', description: 'Manage Linux containers (LXC).' },
 				],
 				default: 'vm',
 				description: 'The type of Proxmox resource to interact with.',
@@ -40,7 +37,6 @@ export class Proxmox implements INodeType {
 				name: 'operation',
 				type: 'options',
 				options: [
-					// VM Operations
 					{ name: 'List VMs', value: 'listVms', description: 'Retrieve a list of all virtual machines on a node.' },
 					{ name: 'Get VM', value: 'getVm', description: 'Get detailed configuration and status of a specific virtual machine.' },
 					{ name: 'Create VM', value: 'createVm', description: 'Create a new virtual machine with specified parameters.' },
@@ -50,46 +46,18 @@ export class Proxmox implements INodeType {
 					{ name: 'Delete VM', value: 'deleteVm', description: 'Delete a virtual machine.' },
 					{ name: 'Clone VM', value: 'cloneVm', description: 'Create a clone of an existing virtual machine.' },
 					{ name: 'Migrate VM', value: 'migrateVm', description: 'Migrate a virtual machine to another node in the cluster.' },
-					{ name: 'Configure VM', value: 'configureVm', description: 'Modify the configuration of a virtual machine.' },
 					{ name: 'Get VM Status', value: 'getVmStatus', description: 'Get the current runtime status of a virtual machine.' },
-
-					// LXC Operations
-					{ name: 'List Containers', value: 'listContainers', description: 'Retrieve a list of all containers on a node.' },
-					{ name: 'Get Container', value: 'getContainer', description: 'Get detailed configuration and status of a specific container.' },
-					{ name: 'Create Container', value: 'createContainer', description: 'Create a new Linux container with specified parameters.' },
-					{ name: 'Start Container', value: 'startContainer', description: 'Start a container.' },
-					{ name: 'Stop Container', value: 'stopContainer', description: 'Stop a container gracefully.' },
-					{ name: 'Restart Container', value: 'restartContainer', description: 'Restart a container.' },
-					{ name: 'Delete Container', value: 'deleteContainer', description: 'Delete a container.' },
-					{ name: 'Clone Container', value: 'cloneContainer', description: 'Create a clone of an existing container.' },
-					{ name: 'Migrate Container', value: 'migrateContainer', description: 'Migrate a container to another node in the cluster.' },
-					{ name: 'Configure Container', value: 'configureContainer', description: 'Modify the configuration of a container.' },
-
-					// Storage Operations
-					{ name: 'List Storage', value: 'listStorage', description: 'Retrieve a list of all storage pools.' },
-					{ name: 'Get Storage', value: 'getStorage', description: 'Get detailed information about a specific storage pool.' },
-					{ name: 'Create Volume', value: 'createVolume', description: 'Create a new volume (e.g., disk image, ISO) on a storage pool.' },
-					{ name: 'Delete Volume', value: 'deleteVolume', description: 'Delete a volume from a storage pool.' },
-					{ name: 'Upload ISO', value: 'uploadIso', description: 'Upload an ISO image to a storage pool.' },
-					{ name: 'Download Template', value: 'downloadTemplate', description: 'Download a container template to a storage pool.' },
-					{ name: 'Backup Storage', value: 'backupStorage', description: 'List backups stored on a specific storage pool.' },
-
-					// Cluster Operations
-					{ name: 'Get Cluster Status', value: 'getClusterStatus', description: 'Get the overall status of the Proxmox cluster.' },
-					{ name: 'List Nodes', value: 'listNodes', description: 'Retrieve a list of all nodes in the cluster.' },
-					{ name: 'Get Node', value: 'getNode', description: 'Get detailed status and information about a specific node.' },
-					{ name: 'Node Statistics', value: 'nodeStatistics', description: 'Get performance and usage statistics for a node.' },
-					{ name: 'Cluster Resources', value: 'clusterResources', description: 'List all resources (VMs, containers, storage) across the cluster.' },
-					{ name: 'HA Status', value: 'haStatus', description: 'Get the High Availability (HA) status of the cluster.' },
-					{ name: 'Cluster Tasks', value: 'clusterTasks', description: 'List all running and completed tasks across the cluster.' },
-
-					// Backup Operations
-					{ name: 'List Backups', value: 'listBackups', description: 'List all available backups for a given storage.' },
-					{ name: 'Create Backup', value: 'createBackup', description: 'Create a new backup of a VM or container.' },
-					{ name: 'Restore Backup', value: 'restoreBackup', description: 'Restore a VM or container from a backup.' },
-					{ name: 'Delete Backup', value: 'deleteBackup', description: 'Delete a specific backup.' },
-					{ name: 'Backup Jobs', value: 'backupJobs', description: 'List all configured backup jobs.' },
-					{ name: 'Backup Configuration', value: 'backupConfiguration', description: 'Configure an existing backup job.' },
+					{ name: 'List Containers', value: 'listContainers', description: 'List all LXC containers on a node.' },
+					{ name: 'Get Container', value: 'getContainer', description: 'Get detailed configuration of a specific LXC container.' },
+					{ name: 'Create Container', value: 'createContainer', description: 'Create a new LXC container with specified parameters.' },
+					{ name: 'Start Container', value: 'startContainer', description: 'Start an LXC container.' },
+					{ name: 'Stop Container', value: 'stopContainer', description: 'Stop an LXC container gracefully.' },
+					{ name: 'Restart Container', value: 'restartContainer', description: 'Restart an LXC container.' },
+					{ name: 'Delete Container', value: 'deleteContainer', description: 'Delete an LXC container.' },
+					{ name: 'Get Container Status', value: 'getContainerStatus', description: 'Get the current runtime status of an LXC container.' },
+					{ name: 'Get Container Agent Status', value: 'getContainerAgentStatus', description: 'Get the agent status of an LXC container.' },
+					{ name: 'Get Container RRD Data', value: 'getContainerRrdData', description: 'Get RRD data for an LXC container.' },
+					{ name: 'Configure Container', value: 'configureContainer', description: 'Update the configuration of an LXC container.' }
 				],
 				default: 'listVms',
 				description: 'The specific operation to perform on the selected resource.',
@@ -107,20 +75,17 @@ export class Proxmox implements INodeType {
 				// Show only for operations that require a node
 				displayOptions: {
 					show: {
-						resource: ['vm', 'lxc', 'storage', 'cluster', 'backup'],
+						resource: ['vm', 'lxc'],
 						operation: [
-							'listVms', 'getVm', 'createVm', 'startVm', 'stopVm', 'restartVm', 'deleteVm', 'cloneVm', 'migrateVm', 'configureVm', 'getVmStatus',
-							'listContainers', 'getContainer', 'createContainer', 'startContainer', 'stopContainer', 'restartContainer', 'deleteContainer', 'cloneContainer', 'migrateContainer', 'configureContainer',
-							'listStorage', 'getStorage', 'createVolume', 'deleteVolume', 'uploadIso', 'downloadTemplate', 'backupStorage',
-							'getNode', 'nodeStatistics',
-							'listBackups', 'createBackup', 'restoreBackup', 'deleteBackup',
+							'listVms', 'getVm', 'createVm', 'startVm', 'stopVm', 'restartVm', 'deleteVm', 'cloneVm', 'migrateVm', 'getVmStatus',
+							'listContainers', 'getContainer', 'createContainer', 'startContainer', 'stopContainer', 'restartContainer', 'deleteContainer', 'getContainerStatus', 'getContainerAgentStatus', 'getContainerRrdData', 'configureContainer',
 						],
 					},
 				},
 			},
-			// VM ID Selection (dynamic for VMs and Containers)
+			// VM/Container ID Selection
 			{
-				displayName: 'VM ID',
+				displayName: 'VM/Container ID',
 				name: 'vmid',
 				type: 'number',
 				default: 0,
@@ -129,8 +94,8 @@ export class Proxmox implements INodeType {
 					show: {
 						resource: ['vm', 'lxc'],
 						operation: [
-							'getVm', 'startVm', 'stopVm', 'restartVm', 'deleteVm', 'cloneVm', 'migrateVm', 'configureVm', 'getVmStatus',
-							'getContainer', 'startContainer', 'stopContainer', 'restartContainer', 'deleteContainer', 'cloneContainer', 'migrateContainer', 'configureContainer',
+							'getVm', 'startVm', 'stopVm', 'restartVm', 'deleteVm', 'cloneVm', 'migrateVm', 'getVmStatus',
+							'getContainer', 'startContainer', 'stopContainer', 'restartContainer', 'deleteContainer', 'getContainerStatus', 'getContainerAgentStatus', 'getContainerRrdData', 'configureContainer',
 						],
 					},
 				},
@@ -212,11 +177,12 @@ export class Proxmox implements INodeType {
 				description: 'The destination Proxmox node for migration or cloning operations.',
 				displayOptions: {
 					show: {
-						resource: ['vm', 'lxc'],
-						operation: ['migrateVm', 'cloneVm', 'migrateContainer', 'cloneContainer'],
+						resource: ['vm'],
+						operation: ['migrateVm', 'cloneVm'],
 					},
 				},
 			},
+			// Container creation parameters
 			{
 				displayName: 'Container Name',
 				name: 'containerName',
@@ -296,119 +262,19 @@ export class Proxmox implements INodeType {
 				},
 			},
 			{
-				displayName: 'Storage ID',
-				name: 'storageId',
-				type: 'string',
-				default: '',
-				description: 'The unique identifier of the storage pool to operate on.',
+				displayName: 'Container Configuration',
+				name: 'containerConfig',
+				type: 'json',
+				default: '{}',
+				description: 'JSON object with container configuration parameters.',
 				displayOptions: {
 					show: {
-						resource: ['storage', 'backup'],
-						operation: ['getStorage', 'createVolume', 'deleteVolume', 'uploadIso', 'downloadTemplate', 'backupStorage', 'listBackups', 'deleteBackup'],
+						resource: ['lxc'],
+						operation: ['configureContainer'],
 					},
 				},
 			},
-			{
-				displayName: 'Volume ID',
-				name: 'volumeId',
-				type: 'string',
-				default: '',
-				description: 'The unique identifier of the volume to operate on (e.g., local:100/vm-100-disk-0.qcow2).',
-				displayOptions: {
-					show: {
-						resource: ['storage', 'backup'],
-						operation: ['deleteVolume', 'deleteBackup'],
-					},
-				},
-			},
-			{
-				displayName: 'Content Type',
-				name: 'contentType',
-				type: 'options',
-				options: [
-					{ name: 'ISO Image', value: 'iso', description: 'ISO CD/DVD image.' },
-					{ name: 'Container Template', value: 'vztmpl', description: 'OpenVZ container template.' },
-					{ name: 'Disk Image', value: 'images', description: 'Virtual disk image.' },
-					{ name: 'Backup', value: 'backup', description: 'Backup file.' },
-				],
-				default: 'iso',
-				description: 'The type of content to create or upload to storage.',
-				displayOptions: {
-					show: {
-						resource: ['storage'],
-						operation: ['createVolume', 'uploadIso'],
-					},
-				},
-			},
-			{
-				displayName: 'File Name',
-				name: 'fileName',
-				type: 'string',
-				default: '',
-				description: 'The name of the file to upload or the target filename for a download.',
-				displayOptions: {
-					show: {
-						resource: ['storage'],
-						operation: ['uploadIso', 'downloadTemplate'],
-					},
-				},
-			},
-			{
-				displayName: 'URL',
-				name: 'url',
-				type: 'string',
-				default: '',
-				description: 'The URL from which to download the template.',
-				displayOptions: {
-					show: {
-						resource: ['storage'],
-						operation: ['downloadTemplate'],
-					},
-				},
-			},
-			{
-				displayName: 'Backup ID',
-				name: 'backupId',
-				type: 'string',
-				default: '',
-				description: 'The unique identifier of the backup job to configure or a specific backup.',
-				displayOptions: {
-					show: {
-						resource: ['backup'],
-						operation: ['backupConfiguration'],
-					},
-				},
-			},
-			{
-				displayName: 'Backup Type',
-				name: 'backupType',
-				type: 'options',
-				options: [
-					{ name: 'VM', value: 'vma', description: 'Backup a virtual machine.' },
-					{ name: 'Container', value: 'lxc', description: 'Backup a Linux container.' },
-				],
-				default: 'vma',
-				description: 'The type of resource to backup.',
-				displayOptions: {
-					show: {
-						resource: ['backup'],
-						operation: ['createBackup'],
-					},
-				},
-			},
-			{
-				displayName: 'Description',
-				name: 'description',
-				type: 'string',
-				default: '',
-				description: 'A descriptive note for the backup.',
-				displayOptions: {
-					show: {
-						resource: ['backup'],
-						operation: ['createBackup'],
-					},
-				},
-			},
+
 		],
 	};
 
@@ -578,11 +444,7 @@ export class Proxmox implements INodeType {
 							const targetNodeMigrate = this.getNodeParameter('targetNode', i) as string;
 							responseData = await proxmoxRequest('POST', `/nodes/${node}/qemu/${vmid}/migrate`, { target: targetNodeMigrate });
 							break;
-						case 'configureVm':
-							vmid = this.getNodeParameter('vmid', i) as number;
-							const vmConfig = this.getNodeParameter('vmConfig', i) as object;
-							responseData = await proxmoxRequest('PUT', `/nodes/${node}/qemu/${vmid}/config`, vmConfig);
-							break;
+
 						case 'getVmStatus':
 							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('GET', `/nodes/${node}/qemu/${vmid}/status/current`);
@@ -607,7 +469,13 @@ export class Proxmox implements INodeType {
 							const containerDiskSize = this.getNodeParameter('containerDiskSize', i) as number;
 							const containerStorage = this.getNodeParameter('containerStorage', i) as string;
 							const containerTemplate = this.getNodeParameter('containerTemplate', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc`, { name: containerName, cores: containerCores, memory: containerMemory, rootfs: `${containerStorage}:${containerDiskSize}`, template: containerTemplate });
+							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc`, { 
+								name: containerName, 
+								cores: containerCores, 
+								memory: containerMemory, 
+								rootfs: `${containerStorage}:${containerDiskSize}`, 
+								template: containerTemplate 
+							});
 							break;
 						case 'startContainer':
 							vmid = this.getNodeParameter('vmid', i) as number;
@@ -625,117 +493,22 @@ export class Proxmox implements INodeType {
 							vmid = this.getNodeParameter('vmid', i) as number;
 							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/lxc/${vmid}`);
 							break;
-						case 'cloneContainer':
+						case 'getContainerStatus':
 							vmid = this.getNodeParameter('vmid', i) as number;
-							const targetNodeClone = this.getNodeParameter('targetNode', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/clone`, { target: targetNodeClone });
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc/${vmid}/status/current`);
 							break;
-						case 'migrateContainer':
+						case 'getContainerAgentStatus':
 							vmid = this.getNodeParameter('vmid', i) as number;
-							const targetNodeMigrate = this.getNodeParameter('targetNode', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/lxc/${vmid}/migrate`, { target: targetNodeMigrate });
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc/${vmid}/agent/status`);
+							break;
+						case 'getContainerRrdData':
+							vmid = this.getNodeParameter('vmid', i) as number;
+							responseData = await proxmoxRequest('GET', `/nodes/${node}/lxc/${vmid}/rrddata`);
 							break;
 						case 'configureContainer':
 							vmid = this.getNodeParameter('vmid', i) as number;
 							const containerConfig = this.getNodeParameter('containerConfig', i) as object;
 							responseData = await proxmoxRequest('PUT', `/nodes/${node}/lxc/${vmid}/config`, containerConfig);
-							break;
-					}
-				} else if (resource === 'storage') {
-					const node = this.getNodeParameter('node', i) as string;
-
-					switch (operation) {
-						case 'listStorage':
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage`);
-							break;
-						case 'getStorage':
-							const storageId = this.getNodeParameter('storageId', i) as string;
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageId}`);
-							break;
-						case 'createVolume':
-							const storageIdCreate = this.getNodeParameter('storageId', i) as string;
-							const fileNameCreate = this.getNodeParameter('fileName', i) as string;
-							const contentTypeCreate = this.getNodeParameter('contentType', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdCreate}/content`, { filename: fileNameCreate, content: contentTypeCreate });
-							break;
-						case 'deleteVolume':
-							const storageIdDelete = this.getNodeParameter('storageId', i) as string;
-							const volumeIdDelete = this.getNodeParameter('volumeId', i) as string;
-							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageIdDelete}/content/${volumeIdDelete}`);
-							break;
-						case 'uploadIso':
-							const storageIdUpload = this.getNodeParameter('storageId', i) as string;
-							const fileNameUpload = this.getNodeParameter('fileName', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdUpload}/upload`, { filename: fileNameUpload, content: 'iso' });
-							break;
-						case 'downloadTemplate':
-							const storageIdDownload = this.getNodeParameter('storageId', i) as string;
-							const urlDownload = this.getNodeParameter('url', i) as string;
-							const fileNameDownload = this.getNodeParameter('fileName', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/storage/${storageIdDownload}/template`, { url: urlDownload, filename: fileNameDownload });
-							break;
-						case 'backupStorage':
-							const storageIdBackup = this.getNodeParameter('storageId', i) as string;
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageIdBackup}/content`);
-							break;
-					}
-				} else if (resource === 'cluster') {
-					switch (operation) {
-						case 'getClusterStatus':
-							responseData = await proxmoxRequest('GET', `/cluster/status`);
-							break;
-						case 'listNodes':
-							responseData = await proxmoxRequest('GET', `/nodes`);
-							break;
-						case 'getNode':
-							const node = this.getNodeParameter('node', i) as string;
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/status`);
-							break;
-						case 'nodeStatistics':
-							const nodeStats = this.getNodeParameter('node', i) as string;
-							responseData = await proxmoxRequest('GET', `/nodes/${nodeStats}`);
-							break;
-						case 'clusterResources':
-							responseData = await proxmoxRequest('GET', `/cluster/resources`);
-							break;
-						case 'haStatus':
-							responseData = await proxmoxRequest('GET', `/cluster/ha/status`);
-							break;
-						case 'clusterTasks':
-							responseData = await proxmoxRequest('GET', `/cluster/tasks`);
-							break;
-					}
-				} else if (resource === 'backup') {
-					const node = this.getNodeParameter('node', i) as string;
-
-					switch (operation) {
-						case 'listBackups':
-							const storageIdList = this.getNodeParameter('storageId', i) as string;
-							responseData = await proxmoxRequest('GET', `/nodes/${node}/storage/${storageIdList}/content?content=backup`);
-							break;
-						case 'createBackup':
-							const vmid = this.getNodeParameter('vmid', i) as number;
-							const storageIdCreate = this.getNodeParameter('storageId', i) as string;
-							const backupTypeCreate = this.getNodeParameter('backupType', i) as string;
-							const descriptionCreate = this.getNodeParameter('description', i) as string;
-							responseData = await proxmoxRequest('POST', `/nodes/${node}/vzdump`, { storage: storageIdCreate, mode: 'snapshot', description: descriptionCreate, type: backupTypeCreate, vmid: vmid });
-							break;
-						case 'restoreBackup':
-							// This is a complex operation, needs more specific implementation
-							responseData = { "error": "Restore operation not fully implemented yet." };
-							break;
-						case 'deleteBackup':
-							const storageIdDelete = this.getNodeParameter('storageId', i) as string;
-							const volumeIdDelete = this.getNodeParameter('volumeId', i) as string;
-							responseData = await proxmoxRequest('DELETE', `/nodes/${node}/storage/${storageIdDelete}/content/${volumeIdDelete}`);
-							break;
-						case 'backupJobs':
-							responseData = await proxmoxRequest('GET', `/cluster/backup`);
-							break;
-						case 'backupConfiguration':
-							const backupIdConfig = this.getNodeParameter('backupId', i) as string;
-							const backupConfig = this.getNodeParameter('backupConfig', i) as object;
-							responseData = await proxmoxRequest('PUT', `/cluster/backup/${backupIdConfig}`, backupConfig);
 							break;
 					}
 				}
